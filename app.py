@@ -249,32 +249,29 @@ HTML_FORM = """
     type="hidden"
     name="mode"
     id="mode"
-    value="{{ request.form.get('mode','household') }}"
+    value="{{ mode }}"
 >
 
 <div class="mode-tabs">
 
 <button
-    id="household-btn"
-    type="button"
-    onclick="setMode('household')"
->
+id="household-btn"
+type="button"
+onclick="window.location='/'">
 🏠 Household
 </button>
 
 <button
-    id="signin-btn"
-    type="button"
-    onclick="setMode('signin')"
->
+id="signin-btn"
+type="button"
+onclick="window.location='/signin'">
 🔑 Sign-In Code
 </button>
 
 <button
-    id="verification-btn"
-    type="button"
-    onclick="setMode('verification')"
->
+id="verification-btn"
+type="button"
+onclick="window.location='/verify'">
 🛡 Verification
 </button>
 
@@ -376,13 +373,18 @@ function closePopup(){
     document.getElementById("popup").style.display="none";
 }
 
-window.onload=function(){
+window.onload = function () {
 
     setMode(
         document.getElementById("mode").value
     );
 
-    document.getElementById("popup").style.display="flex";
+    if (!sessionStorage.getItem("promoShown")) {
+
+        document.getElementById("popup").style.display = "flex";
+
+        sessionStorage.setItem("promoShown", "true");
+    }
 
 }
 
@@ -474,13 +476,26 @@ def loading_link():
   return redirect(external_url)
 
 @app.route("/", methods=["GET", "POST"])
+@app.route("/signin", methods=["GET", "POST"])
+@app.route("/verify", methods=["GET", "POST"])
 def redeem():
+
     code = None
     error = None
 
+    if request.path == "/signin":
+        default_mode = "signin"
+    elif request.path == "/verify":
+        default_mode = "verification"
+    else:
+        default_mode = "household"
+
+    mode = default_mode
+
     if request.method == "POST":
         user_email = request.form["email"].strip().lower()
-        mode = request.form.get("mode", "household")
+        mode = request.form.get("mode", default_mode)
+
         try:
             mail = imaplib.IMAP4_SSL(IMAP_HOST)
             mail.login(ADMIN_EMAIL, ADMIN_PASS)
@@ -534,7 +549,7 @@ def redeem():
     code=code,
     error=error,
     email=user_email if request.method == "POST" else "",
-    mode=mode if request.method == "POST" else "household"
+    mode=mode
 )
 
 def parse_verification(body):
