@@ -199,7 +199,7 @@ HTML_FORM = """
     type="button"
     onclick="setMode('signin')"
 >
-🔑 Sign In
+🔑 Sign-In Code
 </button>
 
 <button
