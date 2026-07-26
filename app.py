@@ -168,6 +168,74 @@ HTML_FORM = """
     color:white;
 
 }
+
+.popup-bg{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.75);
+    backdrop-filter:blur(10px);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:9999;
+}
+
+.popup{
+    background:#1b1b1f;
+    width:90%;
+    max-width:320px;
+    padding:18px;
+    border-radius:18px;
+}
+
+.popup img{
+    width:100%;
+    border-radius:14px;
+    margin-bottom:20px;
+}
+
+.popup h2{
+    color:white;
+    font-size:20px;
+    margin-bottom:10px;
+}
+
+.popup-desc{
+    color:#9ca3af;
+    line-height:1.6;
+    font-size:14px;
+}
+
+.benefits{
+    color:#d1d5db;
+    line-height:1.7;
+    margin:20px 0;
+}
+
+.join-btn{
+    display:block;
+    width:100%;
+    padding:12px;
+    background:#229ED9;
+    color:white;
+    text-align:center;
+    text-decoration:none;
+    border-radius:10px;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
+.cancel-btn{
+    display:block;
+    width:100%;
+    padding:12px;
+    background:#2b2b2b;
+    color:white;
+    text-align:center;
+    text-decoration:none;
+    border-radius:10px;
+}
+
   </style>
 </head>
 <body>
@@ -304,6 +372,19 @@ HTML_FORM = """
 </div>
 
   <script>
+function closePopup(){
+    document.getElementById("popup").style.display="none";
+}
+
+window.onload=function(){
+
+    setMode(
+        document.getElementById("mode").value
+    );
+
+    document.getElementById("popup").style.display="flex";
+
+}
 
  function setMode(mode){
 
@@ -324,13 +405,7 @@ HTML_FORM = """
     document.getElementById(mode+"-instruction").style.display="block";
 }
 
-window.onload=function(){
 
-    setMode(
-        document.getElementById("mode").value
-    );
-
-}
 
     document.getElementById("redeem-form").addEventListener("submit", function () {
       document.getElementById("loading").style.display = "block";
@@ -338,7 +413,46 @@ window.onload=function(){
 
     
   </script>
+<div id="popup" class="popup-bg" onclick="closePopup()">
 
+    <div class="popup" onclick="event.stopPropagation()">
+
+        <img src="/static/sinchan_poster3.png">
+
+        <h2>SINCHAN PREMIUM SHOP</h2>
+
+        <p class="popup-desc">
+            NETFLIX PREMIUM 4K Ultra HD Quality.
+        </p>
+
+        <div class="benefits">
+            ✓ PREMIUM STABLE ACCOUNT<br>
+            ✓ PRIVATE SLOT<br>
+            ✓ 1 USER / 1 PROFILE<br>
+            ✓ NO SCREEN LIMIT
+        </div>
+
+        <a
+            class="join-btn"
+            target="_blank"
+            href="https://t.me/sinchan_shop">
+
+            Join Telegram
+
+        </a>
+
+        <a
+            href="#"
+            class="cancel-btn"
+            onclick="closePopup();return false;">
+
+            Cancel
+
+        </a>
+
+    </div>
+
+</div>
 </body>
 </html>
 
