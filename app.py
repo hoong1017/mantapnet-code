@@ -499,7 +499,9 @@ def redeem():
 
     code = None
     error = None
-
+    msg = None
+    body = None
+    
     if request.path == "/signin":
         default_mode = "signin"
     elif request.path == "/verify":
