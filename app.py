@@ -361,7 +361,7 @@ HTML_FORM = """
 
 <ol>
     <li> <b>SIGN IN GUNA PASSWORD </b>.</li>
-    <li> <b>TEKAN EMAIL A CODE /PENGANALAN KOD </b></li>
+    <li> <b>TEKAN EMAIL A CODE /PENGESAHAN KOD </b></li>
     <li> <b>LETAK EMAIL DALAM KOTAK ATAS</b></li>
     <li> <b>AMBIL CODE LETAK DLM KOTAK NETFLIX </b></li>
 </ol>
