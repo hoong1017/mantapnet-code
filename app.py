@@ -203,42 +203,25 @@ def redeem():
         try:
             mail = imaplib.IMAP4_SSL(IMAP_HOST)
             mail.login(ADMIN_EMAIL, ADMIN_PASS)
-            mail.select("INBOX")
+            mail.select("inbox")
 
             yesterday = (datetime.now() - timedelta(days=1)).strftime("%d-%b-%Y")
-            # 搜索昨天到现在所有邮件
-            status, messages = mail.search(None, f'(SINCE {yesterday})')
+            status, messages_temp = mail.search(None, f'(SINCE {yesterday} SUBJECT "Temporary Access Code")')
+            status, messages_kod = mail.search(None, f'(SINCE {yesterday} SUBJECT "Kod akses sementara")')
 
-            message_ids = messages[0].split()
+            message_ids = messages_temp[0].split() + messages_kod[0].split()
 
             if message_ids:
                 matched_email_id = None
 
-                # 最新邮件开始找
                 for msg_id in reversed(message_ids):
-
                     status, msg_data = mail.fetch(msg_id, "(RFC822)")
                     raw_email = msg_data[0][1]
                     msg = email.message_from_bytes(raw_email)
 
-                    subject = str(email.header.make_header(email.header.decode_header(msg.get("Subject", ""))))
+                    body = extract_email_body(msg)
 
-                    # 只处理 Netflix Temporary Access 邮件
-                    if "temporary access code" not in subject.lower():
-                        continue
-
-                    # 读取 Header
-                    to_email = (
-                        msg.get("Delivered-To", "")
-                        or msg.get("X-Original-To", "")
-                        or msg.get("To", "")
-                    ).lower()
-
-                    print("Subject:", subject)
-                    print("To:", to_email)
-
-                    # 有些服务器 To 会带名字，所以用 in
-                    if user_email in to_email:
+                    if user_email in body:
                         matched_email_id = msg_id
                         break
 
