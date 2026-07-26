@@ -2,6 +2,7 @@ from flask import Flask, request, render_template_string
 from datetime import datetime, timedelta
 import imaplib
 import email
+import traceback
 import re
 import os
 import requests
@@ -13,7 +14,22 @@ app = Flask(__name__)
 IMAP_HOST = "mail.mantapnet.com"
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
 ADMIN_PASS = os.environ.get("ADMIN_PASS")
-
+# ADMIN_EMAIL = "admin@mantapnet.com"
+# ADMIN_PASS = "fg#$Teds234"
+SUBJECTS = {
+    "household": [
+        "Temporary Access Code",
+        "Kod akses sementara"
+    ],
+    "signin": [
+        "Netflix: Your sign-in code",
+        "Netflix: Kod daftar masuk anda"
+    ],
+    "verification": [
+        "Your verification code",
+        "Kod pengesahan anda"
+    ]
+}
 HTML_FORM = """
 <!DOCTYPE html>
 <html lang="en">
@@ -25,7 +41,7 @@ HTML_FORM = """
     * {
       box-sizing: border-box;
     }
-
+  
     body {
       margin: 0;
       padding: 0;
@@ -125,6 +141,33 @@ HTML_FORM = """
     #loading img {
       width: 40px;
     }
+
+    .mode-tabs{
+
+    display:flex;
+    gap:8px;
+    margin-bottom:20px;
+
+}
+
+.mode-tabs button{
+
+    flex:1;
+    padding:10px;
+    cursor:pointer;
+    border-radius:6px;
+    border:1px solid #ccc;
+    background:#eee;
+    font-weight:bold;
+
+}
+
+.mode-tabs button.active{
+
+    background:#2e8b57;
+    color:white;
+
+}
   </style>
 </head>
 <body>
@@ -132,6 +175,45 @@ HTML_FORM = """
   <div class="container">
     <h2>Redeem Access Code</h2>
     <form method="POST" id="redeem-form">
+
+
+<input
+    type="hidden"
+    name="mode"
+    id="mode"
+    value="{{ request.form.get('mode','household') }}"
+>
+
+<div class="mode-tabs">
+
+<button
+    id="household-btn"
+    type="button"
+    onclick="setMode('household')"
+>
+🏠 Household
+</button>
+
+<button
+    id="signin-btn"
+    type="button"
+    onclick="setMode('signin')"
+>
+🔑 Sign In
+</button>
+
+<button
+    id="verification-btn"
+    type="button"
+    onclick="setMode('verification')"
+>
+🛡 Verification
+</button>
+
+</div>
+
+
+      
       <label for="email">Your @mantapnet.com Email:</label>
       <input type="email" name="email" placeholder="example@mantapnet.com" required>
       <input type="submit" value="Get Code">
@@ -152,24 +234,109 @@ HTML_FORM = """
     {% endif %}
   </div>
 
-  <div class="instructions container">
-    <h3>Steps to Redeem</h3>
-    <ol>
-      <li>On TV: Tap <b>[I'm Travelling/Saya Sedang Mengembara]</b> → <b>[Send Email]</b>.</li>
-      <li>On Phone/PC: Tap <b>[Watch Temporary]</b> → <b>[Send Email]</b>.</li>
-      <li>Enter your <b>@mantapnet.com</b> email above and click "Get Code".</li>
-      <li>Wait a few seconds while your code is retrieved.</li>
-    </ol>
-    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px;">
-      <img src="/tv.png" alt="TV Instructions">
-      <img src="/fon.png" alt="Phone Instructions">
-    </div>
-  </div>
+<div
+    id="household-instruction"
+    class="instructions container"
+>
+
+<h3>Household Instructions</h3>
+
+<ol>
+    <li>On TV tap <b>I'm Travelling</b>/On phone <b>Watch tempoorarily</b>.</li>
+    <li>Tap <b>Send Email</b>.</li>
+    <li>Enter your <b>@mantapnet.com</b> email.</li>
+    <li>Click <b>Get Code</b>.</li>
+</ol>
+
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;">
+    <img src="/tv.png">
+    <img src="/fon.png">
+</div>
+
+</div>
+
+<div
+    id="signin-instruction"
+    class="instructions container"
+    style="display:none;"
+>
+
+<h3>Sign In Instructions</h3>
+
+<ol>
+    <li> <b>LETAK EMAIL </b>.</li>
+    <li> <b>AMBIL CODE KAT KOTAK ATAS</b> </li>
+    <li> <b>LETAK CODE DALAM KOTAK NETFLIX</b></li>
+</ol>
+
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;">
+    <img src="/static/signin-1.png">
+    <img src="/static/signin-3.png">
+    <img src="/static/signin-2.png">
+
+</div>
+
+
+</div>
+
+<div
+    id="verification-instruction"
+    class="instructions container"
+    style="display:none;"
+>
+
+<h3>Verification Instructions</h3>
+
+<ol>
+    <li> <b>SIGN IN GUNA PASSWORD </b>.</li>
+    <li> <b>TEKAN EMAIL A CODE /PENGANALAN KOD </b></li>
+    <li> <b>LETAK EMAIL DALAM KOTAK ATAS</b></li>
+    <li> <b>AMBIL CODE LETAK DLM KOTAK NETFLIX </b></li>
+</ol>
+
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;">
+    <img src="/static/verify-1.png">
+    <img src="/static/verify-2.png">
+    <img src="/static/verify-3.png">
+    <img src="/static/verify-4.png">
+</div>
+
+</div>
 
   <script>
+
+ function setMode(mode){
+
+    document.getElementById("mode").value = mode;
+
+    document
+        .querySelectorAll(".mode-tabs button")
+        .forEach(btn=>btn.classList.remove("active"));
+
+    document
+        .getElementById(mode+"-btn")
+        .classList.add("active");
+
+    document.getElementById("household-instruction").style.display="none";
+    document.getElementById("signin-instruction").style.display="none";
+    document.getElementById("verification-instruction").style.display="none";
+
+    document.getElementById(mode+"-instruction").style.display="block";
+}
+
+window.onload=function(){
+
+    setMode(
+        document.getElementById("mode").value
+    );
+
+}
+
     document.getElementById("redeem-form").addEventListener("submit", function () {
       document.getElementById("loading").style.display = "block";
     });
+
+    
   </script>
 
 </body>
@@ -199,58 +366,135 @@ def redeem():
 
     if request.method == "POST":
         user_email = request.form["email"].strip().lower()
-
+        mode = request.form.get("mode", "household")
         try:
             mail = imaplib.IMAP4_SSL(IMAP_HOST)
             mail.login(ADMIN_EMAIL, ADMIN_PASS)
             mail.select("inbox")
 
             yesterday = (datetime.now() - timedelta(days=1)).strftime("%d-%b-%Y")
-            status, messages_temp = mail.search(None, f'(SINCE {yesterday} SUBJECT "Temporary Access Code")')
-            status, messages_kod = mail.search(None, f'(SINCE {yesterday} SUBJECT "Kod akses sementara")')
 
-            message_ids = messages_temp[0].split() + messages_kod[0].split()
+            subjects = SUBJECTS.get(mode)
 
-            if message_ids:
-                matched_email_id = None
+            if not subjects:
+                error = "Invalid mode."
 
-                for msg_id in reversed(message_ids):
-                    status, msg_data = mail.fetch(msg_id, "(RFC822)")
-                    raw_email = msg_data[0][1]
-                    msg = email.message_from_bytes(raw_email)
-
-                    body = extract_email_body(msg)
-
-                    if user_email in body:
-                        matched_email_id = msg_id
-                        break
-
-                if matched_email_id:
-                    status, msg_data = mail.fetch(matched_email_id, "(RFC822)")
-                    raw_email = msg_data[0][1]
-                    msg = email.message_from_bytes(raw_email)
-                    body = extract_email_body(msg)
-
-                    match = re.search(r'https?://[^\s"<>\]]+', body)
-                    link = match.group(0) if match else None
-
-                    if link:
-                        code, status_msg = extract_code_from_verification_link(link)
-                        if status_msg:
-                            error = status_msg
-                    else:
-                        error = "No link found in the email."
-                else:
-                    error = "No matching email found for that address."
             else:
-                error = "No recent emails with subject 'Temporary Access Code' found."
+                message_ids = search_emails(mail, subjects)
+
+                if not message_ids:
+                  error = f"No recent {mode} emails found."
+
+                else:
+
+                  msg, body = find_email(
+                      mail,
+                      message_ids,
+                      user_email
+                  )
+
+                if not msg:
+                    error = "No matching email found for that address."
+
+                else:
+
+                    if mode == "household":
+                        code, error = parse_household(body)
+
+                    elif mode == "signin":
+                        code, error = parse_signin(body)
+
+                    elif mode == "verification":
+                        code, error = parse_verification(body)
 
             mail.logout()
 
-        except Exception as e:
-            error = f"Error: {str(e)}"
+        
 
-    return render_template_string(HTML_FORM, code=code, error=error, email=user_email if request.method == "POST" else "")
+        except Exception as e:
+            traceback.print_exc()      # 印到 CMD
+            error = traceback.format_exc()
+
+    return render_template_string(
+    HTML_FORM,
+    code=code,
+    error=error,
+    email=user_email if request.method == "POST" else "",
+    mode=mode if request.method == "POST" else "household"
+)
+
+def parse_verification(body):
+
+    match = re.search(r"\b(\d{6})\b", body)
+
+    if match:
+        return match.group(1), None
+
+    return None, "Unable to find verification code."
+
+def parse_signin(body):
+
+    match = re.search(r"\b(\d{4})\b", body)
+
+    if match:
+        return match.group(1), None
+
+    return None, "Unable to find sign in code."
+
+def parse_household(body):
+
+    match = re.search(r'https?://[^\s"<>\]]+', body)
+
+    link = match.group(0) if match else None
+
+    if not link:
+        return None, "No link found in the email."
+
+    return extract_code_from_verification_link(link)
+
+def find_email(mail, message_ids, user_email):
+
+    user_email = user_email.lower()
+
+    for msg_id in reversed(message_ids):
+
+        status, msg_data = mail.fetch(msg_id, "(RFC822)")
+        raw_email = msg_data[0][1]
+
+        msg = email.message_from_bytes(raw_email)
+
+        body = extract_email_body(msg)
+
+        to_email = (msg.get("To") or "").lower()
+
+        print("TO:", to_email)
+        print("BODY:")
+        print(body)
+        print("=" * 50)
+
+        if user_email in to_email or user_email in body.lower():
+            return msg, body
+
+    return None, None
+
+def search_emails(mail, subjects):
+
+    yesterday = (
+        datetime.now() - timedelta(days=1)
+    ).strftime("%d-%b-%Y")
+
+    message_ids = []
+
+    for subject in subjects:
+        status, messages = mail.search(
+            None,
+            f'(SINCE {yesterday} SUBJECT "{subject}")'
+        )
+
+        if status == "OK":
+            message_ids.extend(messages[0].split())
+
+    return message_ids
 
 def extract_email_body(msg):
     try:
