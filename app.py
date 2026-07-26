@@ -255,23 +255,23 @@ HTML_FORM = """
 <div class="mode-tabs">
 
 <button
-id="household-btn"
-type="button"
-onclick="window.location='/'">
+    id="household-btn"
+    type="button"
+    onclick="switchMode('/')">
 🏠 Household
 </button>
 
 <button
-id="signin-btn"
-type="button"
-onclick="window.location='/signin'">
+    id="signin-btn"
+    type="button"
+    onclick="switchMode('/signin')">
 🔑 Sign-In Code
 </button>
 
 <button
-id="verification-btn"
-type="button"
-onclick="window.location='/verify'">
+    id="verification-btn"
+    type="button"
+    onclick="switchMode('/verify')">
 🛡 Verification
 </button>
 
@@ -280,7 +280,14 @@ onclick="window.location='/verify'">
 
       
       <label for="email">Your @mantapnet.com Email:</label>
-      <input type="email" name="email" placeholder="example@mantapnet.com" required>
+<input
+    id="email"
+    type="email"
+    name="email"
+    value="{{ prefill_email }}"
+    placeholder="example@mantapnet.com"
+    required>
+
       <input type="submit" value="Get Code">
 
       <div id="loading">
@@ -388,6 +395,16 @@ window.onload = function () {
 
 }
 
+function switchMode(path) {
+    const email = document.getElementById("email").value.trim();
+
+    if (email) {
+        window.location = `${path}?email=${encodeURIComponent(email)}`;
+    } else {
+        window.location = path;
+    }
+}
+
  function setMode(mode){
 
     document.getElementById("mode").value = mode;
@@ -491,6 +508,7 @@ def redeem():
         default_mode = "household"
 
     mode = default_mode
+    prefill_email = request.args.get("email", "")
 
     if request.method == "POST":
         user_email = request.form["email"].strip().lower()
@@ -545,12 +563,13 @@ def redeem():
             error = traceback.format_exc()
 
     return render_template_string(
-    HTML_FORM,
-    code=code,
-    error=error,
-    email=user_email if request.method == "POST" else "",
-    mode=mode
-)
+        HTML_FORM,
+        code=code,
+        error=error,
+        email=user_email if request.method == "POST" else "",
+        mode=mode,
+        prefill_email=prefill_email
+    )
 
 def parse_verification(body):
 
